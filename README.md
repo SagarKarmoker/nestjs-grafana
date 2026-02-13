@@ -1,98 +1,210 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Basic API Monitor
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS application with complete monitoring stack using Prometheus and Grafana. This project demonstrates how to monitor a Node.js API with metrics collection, visualization dashboards, and alerting capabilities.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- **NestJS API**: Simple REST API with health check endpoint
+- **Prometheus Metrics**: Automatic collection of HTTP request metrics, Node.js runtime stats, and custom metrics
+- **Grafana Dashboard**: Pre-configured dashboard with panels for request rates, latency percentiles, error rates, memory usage, and more
+- **Docker Compose**: Complete containerized setup for easy local development and testing
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Architecture
 
-## Project setup
-
-```bash
-$ pnpm install
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Grafana   │────▶│  Prometheus │────▶│  NestJS API │
+│  (Port 3001)│     │  (Port 9090)│     │ (Port 8080) │
+└─────────────┘     └─────────────┘     └─────────────┘
+                            │                   │
+                            └───────────────────┘
+                                    Scrapes
+                                   /metrics
 ```
 
-## Compile and run the project
+## Prerequisites
+
+- Docker
+- Docker Compose
+- pnpm (for local development)
+
+## Quick Start
+
+### 1. Clone and start the services
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+# Start all services
+docker compose up -d
 ```
 
-## Run tests
+This will start three containers:
+
+- **API**: NestJS application on port 8080
+- **Prometheus**: Metrics collection on port 9090
+- **Grafana**: Visualization dashboard on port 3001
+
+### 2. Access the services
+
+| Service      | URL                           | Description                           |
+| ------------ | ----------------------------- | ------------------------------------- |
+| API          | http://localhost:8080/api/v1  | Main application endpoint             |
+| Health Check | http://localhost:8080/api/v1  | Returns health status                 |
+| Metrics      | http://localhost:8080/metrics | Prometheus metrics endpoint           |
+| Prometheus   | http://localhost:9090         | Metrics query interface               |
+| Grafana      | http://localhost:3001         | Visualization dashboard (admin/admin) |
+
+### 3. View the Dashboard
+
+1. Open Grafana: http://localhost:3001
+2. Login with default credentials:
+   - Username: `admin`
+   - Password: `admin`
+3. Navigate to Dashboards → Browse → "NestJS API Dashboard"
+
+### 4. Generate Traffic (Optional)
+
+To see metrics in the dashboard, generate some traffic:
 
 ```bash
-# unit tests
-$ pnpm run test
+# Simple health check
+curl http://localhost:8080/api/v1
 
-# e2e tests
-$ pnpm run test:e2e
+# Generate load
+for i in {1..100}; do curl -s http://localhost:8080/api/v1 > /dev/null; done
 
-# test coverage
-$ pnpm run test:cov
+# Test error responses
+curl http://localhost:8080/api/v1/nonexistent
 ```
 
-## Deployment
+## Available Metrics
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+The dashboard includes the following panels:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Overview
+
+- **Request Rate**: Total requests per second
+- **P95 Latency**: 95th percentile response time
+- **Error Rate**: Percentage of 5xx responses
+- **Active Handles**: Number of active async handles
+
+### HTTP Metrics
+
+- Request rate by route
+- Response time percentiles (P50, P95, P99)
+- Status code distribution (2xx, 4xx, 5xx)
+
+### Node.js Runtime
+
+- Memory usage (Heap Total, Heap Used, External)
+- Event loop lag
+- CPU usage
+- Active requests
+- Process uptime
+- Node.js version
+
+## Development
+
+### Local Development
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# Install dependencies
+pnpm install
+
+# Run in development mode
+pnpm run start:dev
+
+# Build for production
+pnpm run build
+
+# Run tests
+pnpm run test
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Project Structure
 
-## Resources
+```
+.
+├── src/
+│   ├── app.controller.ts      # Health check endpoint
+│   ├── app.module.ts          # Application module with Prometheus
+│   ├── app.service.ts         # Health check logic
+│   ├── main.ts                # Application bootstrap
+│   └── metrics.controller.ts  # Metrics endpoint
+├── grafana/
+│   ├── dashboards/
+│   │   └── nestjs-dashboard.json  # Grafana dashboard definition
+│   └── provisioning/
+│       ├── dashboards/
+│       │   └── dashboards.yml     # Dashboard provisioning config
+│       └── datasources/
+│           └── datasources.yml    # Prometheus datasource config
+├── docker-compose.yml         # Docker Compose configuration
+├── Dockerfile                 # API container definition
+├── prometheus.yml             # Prometheus scrape configuration
+└── package.json               # Dependencies and scripts
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## Configuration
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### Environment Variables
 
-## Support
+Create a `.env` file in the project root:
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```env
+PORT=8080
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
+```
 
-## Stay in touch
+### Prometheus Targets
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Edit `prometheus.yml` to change the scrape configuration:
+
+```yaml
+scrape_configs:
+  - job_name: 'api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api:8080']
+```
+
+## Troubleshooting
+
+### Prometheus shows target as DOWN
+
+1. Check if the API is running: `curl http://localhost:8080/api/v1`
+2. Verify metrics endpoint: `curl http://localhost:8080/metrics`
+3. Check Prometheus targets: http://localhost:9090/targets
+
+### Grafana dashboard shows "No data"
+
+1. Ensure Prometheus is connected: Configuration → Data sources → Prometheus → "Save & test"
+2. Generate some traffic to the API
+3. Check if time range is appropriate (dashboard defaults to "Last 1 hour")
+
+### Port conflicts
+
+If ports are already in use, modify `docker-compose.yml`:
+
+```yaml
+ports:
+  - 'YOUR_PORT:8080' # For API
+  - 'YOUR_PORT:9090' # For Prometheus
+  - 'YOUR_PORT:3000' # For Grafana
+```
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
+
+## Author
+
+Your Name
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
