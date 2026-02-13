@@ -199,7 +199,7 @@ MIT
 
 ## Author
 
-Your Name
+Sagar Karmoker
 
 ## Contributing
 
